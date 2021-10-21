@@ -60,7 +60,7 @@ function whileTraining (epoch, loss) {
 function finishedTraining () {
 	console.log('Training finished')
 	classifying = true
-	// drawDecisionField()
+	drawDecisionField()
 }
 
 function drawDecisionField () {
@@ -72,13 +72,16 @@ function drawDecisionField () {
 			}
 			model.classify(inputs, (error, results) => {
 				noStroke()
-				if (results[0].label === 'C') {
-					fill(100, 0, 200)
-				} else if (results[0].label === 'D') {
-					fill(200, 0, 100)
-				} else if (results[0].label === 'E') {
-					fill(100, 200, 0)
-				}
+				// if (results[0].label === 'C') {
+				// 	fill(100, 0, 200)
+				// } else if (results[0].label === 'D') {
+				// 	fill(200, 0, 100)
+				// } else if (results[0].label === 'E') {
+				// 	fill(100, 200, 0)
+				// }
+				let b = (results[0].label.charCodeAt(0) - 65) / (71 - 65) * 255
+				console.log(b)
+				fill(b / 2, 100, b)
 				ellipse(x, y, 10)
 			})
 		}
