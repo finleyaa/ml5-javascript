@@ -9,21 +9,28 @@ function setup () {
 		outputs: ['label'],
 		debug: true,
 		task: 'classification',
-		learningRate: 0.3,
+		learningRate: 0.1,
+		adaptiveLearningRate: true,
+		adaptiveLearningRateDecay: 0.0001,
 		layers: [
       {
         type: 'dense',
-        units: 8,
-        activation: 'tanh'
+        units: 32,
+        activation: 'relu'
       },
       {
         type: 'dense',
-        activation: 'sigmoid'
+        units: 8,
+        activation: 'relu'
+      },
+      {
+        type: 'dense',
+        activation: 'softmax'
       }
     ]
 	}
 	model = ml5.neuralNetwork(options)
-	generateTrainingData(958)
+	generateTrainingData(2500)
 }
 
 function keyPressed () {
@@ -34,15 +41,22 @@ function keyPressed () {
 
 function trainModel () {
 	model.normalizeData()
+	model.createMetaData(model.neuralNetworkData.data.raw)
+	model.prepareForTraining(model.neuralNetworkData.data.raw)
+	model.options.layers = model.createNetworkLayers(
+		model.options.layers,
+		model.neuralNetworkData.meta
+	)
+	model.compile(_modelOptions = {
+		loss: 'binaryCrossentropy',
+		metrics: ['accuracy'],
+	})
+	console.log(model.data.training)
 	let options = {
-		epochs: 3580
+		epochs: 4000,
+		batchSize: model.neuralNetworkData.data.raw.length
 	}
-	console.log(model.neuralNetwork.data)
-	model.train(options, whileTraining, doneTraining)
-}
-
-function whileTraining (epoch, loss) {
-	console.log(epoch)
+	model.train(options, doneTraining)
 }
 
 function doneTraining () {
@@ -52,10 +66,11 @@ function doneTraining () {
 function generateTrainingData (amount) {
 	let winGames = 0
 	let loseGames = 0
+	let allMoves = []
 	for (let i = 0; i < amount; i++) {
 		// play a random game
 		let moves = []
-		let turn = 'X'
+		let turn = Math.random() < 0.5 ? 'X' : 'O'
 		let finished = false
 		let result = null
 		let board = ['', '', '', '', '', '', '', '', '']
@@ -140,17 +155,38 @@ function generateTrainingData (amount) {
 					return -1
 				}
 			})
-			if (result === -1) {
-				loseGames += 1
-				model.addData(moveNumerical, { label: 'lose' })
-			} else if (result === 1) {
-				winGames += 1
-				model.addData(moveNumerical, { label: 'win' })
+			const alreadySaved = allMoves.find((savedMove) => {
+				let same = true
+				for (let i = 0; i < savedMove.board.length; i++) {
+					if (savedMove.board[i].toString() !== moveNumerical[i].toString()) {
+						same = false
+					}
+				}
+				return same
+			})
+			if (!alreadySaved) {
+				if (result === -1) {
+					// if (loseGames <= winGames) {
+					// 	loseGames += 1
+					// 	model.addData(moveNumerical, { label: 'lose' })
+					// }
+					allMoves.push({ board: moveNumerical, label: 'lose' })
+				} else if (result === 1) {
+					// if (winGames <= loseGames) {
+					// 	winGames += 1
+					// 	model.addData(moveNumerical, { label: 'win' })
+					// }
+					allMoves.push({ board: moveNumerical, label: 'win' })
+				}
+			} else {
+				console.log('already saved')
 			}
 		})
 	}
+	allMoves.forEach(move => {
+		model.addData(move.board, { label: move.label })
+	})
 	console.log('Training data created')
-	// console.log(model.neuralNetworkData.data.raw)
 	console.log('Win games:', winGames)
 	console.log('Lose games:', loseGames)
 }

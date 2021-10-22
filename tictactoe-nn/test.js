@@ -82,6 +82,10 @@ function aiTakeTurn () {
   }
   model.classifyMultiple(toClassify, (error, results) => {
     // got results
+    if (error) {
+      console.log(error)
+      return
+    }
     console.log(results)
     let currentBestIndex = 0
     let currentBestConf = 0
@@ -89,26 +93,23 @@ function aiTakeTurn () {
 
     for (let i = 0; i < results.length; i++) {
       if (results[i][0].label === 'win') {
-        // if (results[i][0].confidence > currentBestConf) {
+        if (results[i][0].confidence > currentBestConf) {
+          currentBestIndex = i
+          currentBestConf = results[i][0].confidence
+        }
+        // if (results[i][0].confidence / results[i][1].confidence > currentBestConf) {
         //   currentBestIndex = i
-        //   currentBestConf = results[i][0].confidence
-        //   winWasGreater = true
+        //   currentBestConf = results[i][0].confidence / results[i][1].confidence
         // }
-        if (results[i][0].confidence / results[i][1].confidence > currentBestConf) {
-          currentBestIndex = i
-          currentBestConf = results[i][0].confidence / results[i][1].confidence
-        }
       } else {
-        // if (results[i][1].confidence > currentBestConf) {
-        //   if (!winWasGreater) {
-        //     currentBestIndex = i
-        //     currentBestConf = results[i][1].confidence
-        //   }
-        // }
-        if (results[i][1].confidence / results[i][0].confidence > currentBestConf) {
+        if (results[i][1].confidence > currentBestConf) {
           currentBestIndex = i
-          currentBestConf = results[i][1].confidence / results[i][0].confidence
+          currentBestConf = results[i][1].confidence
         }
+        // if (results[i][1].confidence / results[i][0].confidence > currentBestConf) {
+        //   currentBestIndex = i
+        //   currentBestConf = results[i][1].confidence / results[i][0].confidence
+        // }
       }
     }
 
